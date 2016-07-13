@@ -3,33 +3,23 @@ dist: trusty
 language: ruby
 
 before_install:
-- gem install asciidoctor -v 1.5.2 
+before_install:
+- gem install asciidoctor -v 1.5.2
 - gem install tilt
-- sudo pip install git+https://github.com/rdhyee/ebooklib.git
+- sudo pip install git+https://github.com/rdhyee/gitberg.git
+- sudo pip install pillow
+- sudo pip install cssutils
+- sudo pip install docutils
+- sudo pip install roman
+- sudo pip install git+git://github.com/rdhyee/pg-epubmaker.git
 script:
 - VERSION=`ruby -e "require 'yaml'; meta = YAML.load_file('metadata.yaml'); puts meta['_version'];"`
 - git clone https://github.com/gitenberg-dev/asciidoctor-htmlbook.git
-
 - sudo pip install -r asciidoctor-htmlbook/gitberg-machine/requirements.txt
-- asciidoctor -a toc,idprefix=xx_,version=$VERSION -b xhtml5 -T ./asciidoctor-htmlbook/htmlbook-autogen/
-  -d book book.asciidoc -o book.html
-- git clone https://github.com/gitenberg-dev/HTMLBook
 
-# make book.html available to jinja2 environment by putting it into templates
-- cp book.html asciidoctor-htmlbook/gitberg-machine/templates/
-
-- /usr/bin/python asciidoctor-htmlbook/gitberg-machine/machine.py -o . -m metadata.yaml book.html
-- xsltproc -stringparam external.assets.list " " ./HTMLBook/htmlbook-xsl/epub.xsl book.html
-- cp ./HTMLBook/stylesheets/epub/epub.css OEBPS
-- if [ -e cover.jpg ]; then cp cover.jpg OEBPS/cover.jpg; fi
-# look for first images directory and one found, copy over to ./OEBPS
-- find . -name images -type d | head -n 1 | xargs -I {} mv {} ./OEBPS/
-- zip -rX book.epub mimetype
-- zip -rX book.epub OEBPS/ META-INF/
-- if test -d "OEBPS/images/"; then zip -rX book.epub OEBPS/images/ ;fi
-- mv book.epub Don-Quixote.epub
-- ebook-convert Don-Quixote.epub Don-Quixote.mobi
-- xvfb-run ebook-convert Don-Quixote.epub Don-Quixote.pdf
+- /usr/bin/python -c "from gitenberg import travis; travis.build_epub()"
+- ebook-convert book.epub book.mobi
+- xvfb-run ebook-convert book.epub book.pdf
 branches:
   only:
   - master
@@ -45,10 +35,11 @@ deploy:
   provider: releases
   api_key:
     secure: IQVAavlkXGnqv+58EEVSljr5Y495Cthic2jh8oyWUGaEAdhQ9TIqLH9TtfEEgNYIdTQynHrcmDM8+tbxZ/R6Guy9442UPUNAA6avkKfGq3Srql9jkXhc2EJ5PXdcGT5y5LZQWyAHuXS2fcUt9uQUcW9Vzenl0Fbw7Un5R8VMRVUbzdAm78EDJH5WRuCjOGFd2/HqqC9eA4LpBvSigYKXfyLOxzHGCzymfeUi+QIPpzy01GQ8t9/x+XMxg4VPmzdzHNG3waWDpMO8Lu5yyi5pHMu4UvFEsRuz33CSKWWQDU93zau6izXUijbUV25RYThWvOGJ16UtPy1FE0EE7qqrS8JAKDIkxDe4bZmrWSYidroafexdH8ar8f5IMdgYVtpI8ur/ouUBGGHlzYe2ce/1/rh8AOs1ujNJHcvHhYqW8Q1yvN3gbbof14K8rNTl5bhwrRI6WBAYxCxDLVS61ox8UYsGZLw5BXlS98HbVQxcKL0fI+Ia634eSwL82oOY6fkeZhaZaJtOjZo7t3BH50JGfnHBRKTHdaQsLQskGuDzHYi47fiNHPcwfpG/kGtWMcQ4d/05EOFZwbBCr3uRc8ppV/jZfAMeANAP2V0HbrU0yzpUzRnZf4WWIPe95HRDmhPkcznBrzjDH4xGHfdFi0cnf65jmzVsjN3kcHsNeADFoE0=
+
   file:
-    - Don-Quixote.epub
-    - Don-Quixote.mobi
-    - Don-Quixote.pdf
+    - book.epub
+    - book.mobi
+    - book.pdf
   "on":
     repo: rdhyee/Don-Quixote_996
 addons:
@@ -57,3 +48,15 @@ addons:
     - xsltproc
     - xvfb
     - calibre
+    - python-pip
+    - git
+    - python-dev
+    - libjpeg-dev
+    - libpng-dev
+    - libfreetype6
+    - libfreetype6-dev
+    - zlib1g-dev
+    - python-lxml
+    - libxml2-dev
+    - libxslt1-dev
+    - tidy
